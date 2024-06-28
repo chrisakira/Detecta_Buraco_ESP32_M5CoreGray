@@ -27,7 +27,8 @@ public:
                     ping_device_url(base_url + "/v1/ping"),
                     logger_manager_ptr(logger_manager_ptr),
                     collector_manager_ptr(collector_manager_ptr),
-                    xMutex(xMutex){  
+                    xMutex(xMutex),
+                    xSemaphore_Uploader(xSemaphore_Uploader){  
         this->http.setReuse(true);
         this->http.setTimeout(5000);
         strcpy(mac_address, WiFi.macAddress().c_str());     

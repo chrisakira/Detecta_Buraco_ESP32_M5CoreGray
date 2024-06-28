@@ -24,6 +24,7 @@ void Collector_Manager::add_sample(const double value_, const int measurement_, 
             this->buffer_read[j] = this->buffer_4_bytes[i];
             this->j++;
         }
+        
     if (this->j >= (Buffer_size))
     {
         this->j = 0;    

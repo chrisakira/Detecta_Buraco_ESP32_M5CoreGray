@@ -5,6 +5,7 @@ bool Uploader_Manager::get_alive()
         return false;
 
     this->http.begin(this->get_alive_url); 
+    this->http.addHeader("Authorization", "F4ujtjaC7vgFE4oowrgc8Pd6WbT");
     int httpCode = http.GET();
     if(this->logger_manager_ptr!=NULL){
         this->logger_manager_ptr->info("[Uploader_Manager] GET alive returned code: " + String(httpCode));
@@ -51,7 +52,6 @@ bool Uploader_Manager::post_file_buffer(String file_name, uint8_t *buffer)
     if (WiFi.status() != WL_CONNECTED)
         return false;
 
-    if(this->connect_status == false){
         String file_header = "attachment; filename= " + file_name;
         this->connect_status = true;
         this->http.begin(this->post_file_url);
@@ -59,7 +59,6 @@ bool Uploader_Manager::post_file_buffer(String file_name, uint8_t *buffer)
         this->http.addHeader("Authorization", "F4ujtjaC7vgFE4oowrgc8Pd6WbT");
         this->http.addHeader("Cookie", "device="+String(mac_address)); 
         this->http.addHeader("Content-Disposition", file_header.c_str());
-    }
 
     this->http.sendRequest("POST", buffer,  Buffer_size+4);
 
@@ -106,16 +105,15 @@ bool Uploader_Manager::uploader()
         xSemaphoreGive(*this->xMutex);
         logger_manager_ptr->debug("Sent in :      " + String((esp_timer_get_time() - timer_write)/1000));
     #endif
+    return true;
 }
 
 void Uploader_Manager::uploader_task(void *z)
 {
     for (;;)
     {
-        if (xSemaphoreTake(*this->xSemaphore_Uploader, portMAX_DELAY) == pdTRUE) 
-            uploader();
-        else
-            vTaskDelay(5000);
+        while (xSemaphoreTake(*this->xSemaphore_Uploader, portMAX_DELAY) != pdTRUE){} 
+        uploader();
     }
 }
 
@@ -126,11 +124,11 @@ bool Uploader_Manager::create_task()
         if (this->is_task_created == false)
         {
             this->is_task_created = true;
-            // xTaskCreatePinnedToCore([](void *z)
-            //                         { static_cast<Uploader_Manager *>(z)->uploader_task(z); },
-            //                         "Uploader", 2048, this, 4, &this->uploader_task_handler, 0);
-            // if (this->logger_manager_ptr != NULL)
-            //     this->logger_manager_ptr->info("[Uploader_Manager] Uploader Task Created");
+            xTaskCreatePinnedToCore([](void *z)
+                                    { static_cast<Uploader_Manager *>(z)->uploader_task(z); },
+                                    "Uploader", 8192, this, 4, &this->uploader_task_handler, 0);
+            if (this->logger_manager_ptr != NULL)
+                this->logger_manager_ptr->info("[Uploader_Manager] Uploader Task Created");
             return true;
         }
         return false;

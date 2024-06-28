@@ -18,39 +18,13 @@ SemaphoreHandle_t xSemaphore = NULL;
 SemaphoreHandle_t xSemaphore_Uploader = NULL;
 
 Logger_Manager logger_manager(DEBUG);
-M5_Manager m5_manager(&logger_manager, "Perdi", "GETWICKED");
+M5_Manager m5_manager(&logger_manager, "VIVOFIBRA-F46E", "EAEA8FF46E");
 Collector_Manager collector_manager(&logger_manager, &xMutex, &xSemaphore);
-Uploader_Manager uploader_manager("http://www.akira-maker.com/iot", &logger_manager, &collector_manager, &m5_manager, &xMutex, &xSemaphore_Uploader);
+Uploader_Manager uploader_manager("http://192.168.15.21:5000", &logger_manager, &collector_manager, &m5_manager, &xMutex, &xSemaphore);
 SD_Manager sd_manager(&logger_manager, &m5_manager, &collector_manager, &uploader_manager, &xMutex, &xSemaphore, &xSemaphore_Uploader);
 
 TickType_t lastWakeTime = xTaskGetTickCount();
-void displayInfo();
 
-void IRAM_ATTR interrupt_acquisiton()
-{
-    uint_fast64_t timestamp = ((uint_fast64_t)m5_manager.now) * 1000000 + (esp_timer_get_time() - m5_manager.micros_now);
-    
-    float pitch  = m5_manager.pitch;
-    float roll   = m5_manager.roll;
-    float yaw    = m5_manager.yaw;
-    float acc_x  = m5_manager.accel_X;
-    float acc_y  = m5_manager.accel_Y;
-    float acc_z  = m5_manager.accel_Z;
-    float gyro_x = m5_manager.gyro_X;
-    float gyro_y = m5_manager.gyro_Y;
-    float gyro_z = m5_manager.gyro_Z;
-
-    collector_manager.add_sample(roll, 1, timestamp);
-    collector_manager.add_sample(yaw,  2, timestamp);
-    
-    collector_manager.add_sample(acc_x, 3, timestamp);
-    collector_manager.add_sample(acc_y, 4, timestamp);
-    collector_manager.add_sample(acc_z, 5, timestamp);
-
-    collector_manager.add_sample(gyro_x, 6, timestamp);
-    collector_manager.add_sample(gyro_y, 7, timestamp);
-    collector_manager.add_sample(gyro_z, 8, timestamp); 
-}
 void setup()
 {
     disableCore0WDT();
@@ -111,20 +85,39 @@ void setup()
     }
     
     Serial.println("Uploader Manager Tasks created.");
-    timer = timerBegin(0, 80, true);
-    if(timer == NULL){
-        M5.Lcd.println("Error beginng the timer.");
-        M5.Lcd.println("Rebooting in 10s.");
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
-        esp_restart();
-    }
-    timerAttachInterrupt(timer, &interrupt_acquisiton, true);
-    timerAlarmWrite(timer, 10000, true);
-    timerAlarmEnable(timer);
-    
 }
 
 void loop()
 {
-    vTaskDelay(10000);
+
+    TickType_t lastWakeTime = xTaskGetTickCount();
+    const TickType_t interval = pdMS_TO_TICKS(500);
+    for (;;)
+    {
+        lastWakeTime = xTaskGetTickCount();
+        uint_fast64_t timestamp = ((uint_fast64_t)m5_manager.now) * 1000000 + (esp_timer_get_time() - m5_manager.micros_now);
+        
+        float pitch  = m5_manager.pitch;
+        float roll   = m5_manager.roll;
+        float yaw    = m5_manager.yaw;
+        float acc_x  = m5_manager.accel_X;
+        float acc_y  = m5_manager.accel_Y;
+        float acc_z  = m5_manager.accel_Z;
+        float gyro_x = m5_manager.gyro_X;
+        float gyro_y = m5_manager.gyro_Y;
+        float gyro_z = m5_manager.gyro_Z;
+
+        collector_manager.add_sample(roll, 1, timestamp);
+        collector_manager.add_sample(yaw,  2, timestamp);
+        
+        collector_manager.add_sample(acc_x, 3, timestamp);
+        collector_manager.add_sample(acc_y, 4, timestamp);
+        collector_manager.add_sample(acc_z, 5, timestamp);
+
+        collector_manager.add_sample(gyro_x, 6, timestamp);
+        collector_manager.add_sample(gyro_y, 7, timestamp);
+        collector_manager.add_sample(gyro_z, 8, timestamp); 
+        vTaskDelayUntil(&lastWakeTime, interval);
+    }
+    
 }

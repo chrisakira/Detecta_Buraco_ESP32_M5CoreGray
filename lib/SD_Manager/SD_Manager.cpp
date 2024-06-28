@@ -12,7 +12,7 @@ void SD_Manager::sd_writer(void *z)
     //     logger_manager_ptr->critical("[SD_Manager.cpp] File not opened");
     //     exit(-1);
     // }
-    for (;;) 
+    for (;;)  
     {
         if (xSemaphoreTake(*this->xSemaphore, portMAX_DELAY) == pdTRUE)
         {

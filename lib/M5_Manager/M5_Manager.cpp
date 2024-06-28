@@ -40,44 +40,9 @@ void M5_Manager::update_mpu_data(void *z)
 {
     M5.IMU.Init();
     TickType_t lastWakeTime = xTaskGetTickCount();
-    const TickType_t interval = pdMS_TO_TICKS(1);
-
-    Serial2.begin(GPSBaud, SERIAL_8N1, RXPin, TXPin);
-    this->reset_LCD();
-    M5.Lcd.println("GPS OFF");
+    const TickType_t interval = pdMS_TO_TICKS(5);
     for (;;)
     {
-        // while (Serial2.available() > 0)
-        // {
-
-        //     gps.encode(Serial2.read());
-        //     if (gps.location.isUpdated())
-        //     {
-        //         Latitude = gps.location.lat();
-        //         Longitude = gps.location.lng();
-        //         Altitude = gps.altitude.meters();
-        //         Speed = gps.speed.kmph();
-        //         GPS_last_seen = esp_timer_get_time();
-        //         if(this->gps_status == false){
-        //             this->gps_status = true;
-        //             this->reset_LCD();
-        //             M5.Lcd.println("GPS ON");
-        //         }
-                
-        //     }
-        //     else{
-        //         Latitude = 0.0F;
-        //         Longitude = 0.0F;
-        //         Altitude = 0.0F;
-        //         Speed = 0.0F;
-        //     }
-        // }
-        // if((this->GPS_last_seen < esp_timer_get_time() - 2000000) && (this->gps_status == true)){
-        //     this->gps_status = false; 
-        //     this->reset_LCD();
-        //     M5.Lcd.println("GPS OFF");
-        // }
-
         M5.IMU.getAhrsData(&this->gyro_X, &this->gyro_Y, &this->gyro_Z, &this->accel_X, &this->accel_Y, &this->accel_Z, &this->pitch, &this->roll, &this->yaw);
         M5.IMU.getTempData(&this->temperature);
 
@@ -108,7 +73,7 @@ bool M5_Manager::create_tasks()
             this->is_task_created = true;
             xTaskCreatePinnedToCore([](void *z)
                                     { static_cast<M5_Manager *>(z)->update_mpu_data(z); },
-                                    "Update the MPU data", 2048, this, 0, &this->update_mpu_data_task_handle, 1);
+                                    "Update the MPU data", 4096, this, 0, &this->update_mpu_data_task_handle, 1);
             if (this->logger_manager_ptr != NULL)
                 this->logger_manager_ptr->info("[M5_Manager] Update MPU Task created");
             return true;
@@ -141,8 +106,9 @@ bool M5_Manager::connect_wifi()
         this->logger_manager_ptr->info("[M5_Manager] Connecting to WiFi");
     while (WiFi.status() != WL_CONNECTED)
     {
-        vTaskDelay(1000);
+        vTaskDelay(2000);
         M5.Lcd.print(".");
+        WiFi.begin(this->ssid.c_str(), this->password.c_str());
         if (this->logger_manager_ptr != NULL)
             this->logger_manager_ptr->info("[M5_Manager] Connecting to WiFi...");
     }
