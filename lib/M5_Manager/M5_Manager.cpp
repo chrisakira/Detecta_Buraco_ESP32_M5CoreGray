@@ -36,16 +36,48 @@ bool M5_Manager::reset_LCD()
     return true;
 }
 
-void M5_Manager::update_mpu_data(void *z)
+void M5_Manager::update_mpu_battery_level(void *z)
 {
-    M5.IMU.Init();
-    TickType_t lastWakeTime = xTaskGetTickCount();
-    const TickType_t interval = pdMS_TO_TICKS(5);
     for (;;)
     {
-        M5.IMU.getAhrsData(&this->gyro_X, &this->gyro_Y, &this->gyro_Z, &this->accel_X, &this->accel_Y, &this->accel_Z, &this->pitch, &this->roll, &this->yaw);
-        M5.IMU.getTempData(&this->temperature);
+        M5.Lcd.setCursor(0, 0);
+        M5.Lcd.println("Battery: " + String(M5.Power.getBatteryLevel()) + "%");
+        vTaskDelay(1000);
+    }
+}
 
+void M5_Manager::update_mpu_data(void *z)
+{
+    this->logger_manager_ptr->info("[M5_Manager] Update MPU Data Task started");
+    M5.IMU.Init();
+    TickType_t lastWakeTime = xTaskGetTickCount();
+    const TickType_t interval = pdMS_TO_TICKS(1);
+    float gyro_X_;
+    float gyro_Y_;
+    float gyro_Z_;  
+    float accel_X_;
+    float accel_Y_;
+    float accel_Z_;
+    float pitch_;
+    float roll_;
+    float yaw_;
+    
+    this->logger_manager_ptr->info("[M5_Manager] Starting MPU Data Update Task");
+    for (;;)
+    {
+        M5.IMU.getGyroData(&gyro_X_, &gyro_Y_, &gyro_Z_);
+        M5.IMU.getAccelData(&accel_X_, &accel_Y_,  &accel_Z_); 
+        M5.IMU.getAhrsData(&pitch_ , &roll_ ,&yaw_ );
+        this->gyro_X = gyro_X_;
+        this->gyro_Y = gyro_Y_;
+        this->gyro_Z = gyro_Z_;
+        this->accel_X = accel_X_;
+        this->accel_Y = accel_Y_;
+        this->accel_Z = accel_Z_;
+        this->pitch = pitch_;
+        this->roll = roll_;
+        this->yaw = yaw_;
+        this->logger_manager_ptr->info("[M5_Manager] Data: pitch: " + String(this->pitch) + " roll: " + String(this->roll) + " yaw: " + String(this->yaw));
         vTaskDelayUntil(&lastWakeTime, interval);
     }
 }
@@ -53,6 +85,8 @@ void M5_Manager::update_mpu_data(void *z)
 void M5_Manager::M5_begin(bool LCDEnable, bool SDEnable, bool SerialEnable, bool I2CEnable)
 {
     M5.begin(LCDEnable, SDEnable, SerialEnable, I2CEnable);
+    M5.Power.begin();
+    M5.Lcd.println("Battery: " + String(M5.Power.getBatteryLevel()) + "%");
     if (this->logger_manager_ptr != NULL)
         this->logger_manager_ptr->info("[M5_Manager] M5Core2 initialized");
 
@@ -73,7 +107,10 @@ bool M5_Manager::create_tasks()
             this->is_task_created = true;
             xTaskCreatePinnedToCore([](void *z)
                                     { static_cast<M5_Manager *>(z)->update_mpu_data(z); },
-                                    "Update the MPU data", 4096, this, 0, &this->update_mpu_data_task_handle, 1);
+                                    "Update the MPU data", 2048, this, 0, &this->update_mpu_data_task_handle, 1);
+            xTaskCreatePinnedToCore([](void *z)
+                                    { static_cast<M5_Manager *>(z)->update_mpu_battery_level(z); },
+                                    "Update the Battery level", 2048, this, 0, &this->update_battery_level_task_handle, 1);
             if (this->logger_manager_ptr != NULL)
                 this->logger_manager_ptr->info("[M5_Manager] Update MPU Task created");
             return true;
@@ -108,7 +145,6 @@ bool M5_Manager::connect_wifi()
     {
         vTaskDelay(2000);
         M5.Lcd.print(".");
-        WiFi.begin(this->ssid.c_str(), this->password.c_str());
         if (this->logger_manager_ptr != NULL)
             this->logger_manager_ptr->info("[M5_Manager] Connecting to WiFi...");
     }

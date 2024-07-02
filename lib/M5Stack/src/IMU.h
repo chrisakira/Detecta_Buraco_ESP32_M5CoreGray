@@ -25,7 +25,7 @@ class IMU {
     void getGyroData(float *gx, float *gy, float *gz);
     void getTempData(float *t);
 
-    void getAhrsData(float *gyroX, float *gyroY, float *gyroZ, float *accX, float *accY, float *accZ, float *pitch, float *roll, float *yaw);
+    void getAhrsData(float *pitch, float *roll, float *yaw);
 
     void setFIFOEnable(bool enable_flag);
     uint8_t ReadFIFO();

@@ -34,7 +34,7 @@ void setup()
     xSemaphore_Uploader = xSemaphoreCreateBinary();
 
     sd_manager.set_logger_manager(&logger_manager);
-    m5_manager.M5_begin(true, false, false, false);
+    m5_manager.M5_begin(true, false, true, true);
     m5_manager.reset_LCD();
     M5.Lcd.println("Initializing...");
     m5_manager.connect_wifi();
@@ -91,7 +91,7 @@ void loop()
 {
 
     TickType_t lastWakeTime = xTaskGetTickCount();
-    const TickType_t interval = pdMS_TO_TICKS(500);
+    const TickType_t interval = pdMS_TO_TICKS(15);
     for (;;)
     {
         lastWakeTime = xTaskGetTickCount();
@@ -107,16 +107,17 @@ void loop()
         float gyro_y = m5_manager.gyro_Y;
         float gyro_z = m5_manager.gyro_Z;
 
-        collector_manager.add_sample(roll, 1, timestamp);
-        collector_manager.add_sample(yaw,  2, timestamp);
-        
-        collector_manager.add_sample(acc_x, 3, timestamp);
-        collector_manager.add_sample(acc_y, 4, timestamp);
-        collector_manager.add_sample(acc_z, 5, timestamp);
+        collector_manager.add_sample(roll,   1, timestamp);
+        collector_manager.add_sample(yaw,    2, timestamp);
+        collector_manager.add_sample(pitch,  3, timestamp);
 
-        collector_manager.add_sample(gyro_x, 6, timestamp);
-        collector_manager.add_sample(gyro_y, 7, timestamp);
-        collector_manager.add_sample(gyro_z, 8, timestamp); 
+        collector_manager.add_sample(acc_x, 4, timestamp);
+        collector_manager.add_sample(acc_y, 5, timestamp);
+        collector_manager.add_sample(acc_z, 6, timestamp);
+
+        collector_manager.add_sample(gyro_x, 7, timestamp);
+        collector_manager.add_sample(gyro_y, 8, timestamp);
+        collector_manager.add_sample(gyro_z, 9, timestamp); 
         vTaskDelayUntil(&lastWakeTime, interval);
     }
     

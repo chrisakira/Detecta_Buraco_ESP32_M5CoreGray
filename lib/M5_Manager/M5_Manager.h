@@ -30,6 +30,8 @@ public:
 
     void update_mpu_data(void *z);
     
+    void update_mpu_battery_level(void *z);
+    
     void write_mpu_data(void *z);
     
     const char *get_current_time();
@@ -38,22 +40,22 @@ public:
 
     void update_unix_time();
 
-    double Latitude     = 0.0F;
-    double Longitude    = 0.0F;
-    double Altitude     = 0.0F;
-    double Speed        = 0.0F;
+    volatile double Latitude     = 0.0F;
+    volatile double Longitude    = 0.0F;
+    volatile double Altitude     = 0.0F;
+    volatile double Speed        = 0.0F;
 
-    float accel_X = 0.0F;
-    float accel_Y = 0.0F;
-    float accel_Z = 0.0F;
+    volatile float accel_X = 0.0F;
+    volatile float accel_Y = 0.0F;
+    volatile float accel_Z = 0.0F;
 
-    float gyro_X = 0.0F;
-    float gyro_Y = 0.0F;
-    float gyro_Z = 0.0F;
+    volatile float gyro_X = 0.0F;
+    volatile float gyro_Y = 0.0F;
+    volatile float gyro_Z = 0.0F;
 
-    float pitch = 0.0F;
-    float roll  = 0.0F;
-    float yaw   = 0.0F;
+    volatile float pitch = 0.0F;
+    volatile float roll  = 0.0F;
+    volatile float yaw   = 0.0F;
 
     float temperature = 0.0F;
     time_t now = 0;
@@ -77,4 +79,5 @@ private:
     bool lcd_initialized = false;
     bool is_task_created = false;
     TaskHandle_t update_mpu_data_task_handle;
+    TaskHandle_t update_battery_level_task_handle;
 };

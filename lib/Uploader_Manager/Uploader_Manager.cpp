@@ -52,17 +52,17 @@ bool Uploader_Manager::post_file_buffer(String file_name, uint8_t *buffer)
     if (WiFi.status() != WL_CONNECTED)
         return false;
 
-        String file_header = "attachment; filename= " + file_name;
-        this->connect_status = true;
-        this->http.begin(this->post_file_url);
-        this->http.addHeader("Content-Type", "application/octet-stream");
-        this->http.addHeader("Authorization", "F4ujtjaC7vgFE4oowrgc8Pd6WbT");
-        this->http.addHeader("Cookie", "device="+String(mac_address)); 
-        this->http.addHeader("Content-Disposition", file_header.c_str());
+    String file_header = "attachment; filename= " + file_name;
+    this->http.begin(this->post_file_url);
+    this->http.addHeader("Content-Type", "application/octet-stream");
+    this->http.addHeader("Authorization", "F4ujtjaC7vgFE4oowrgc8Pd6WbT");
+    this->http.addHeader("Cookie", "device="+String(mac_address)); 
+    this->http.addHeader("Content-Disposition", file_header.c_str());
+
 
     this->http.sendRequest("POST", buffer,  Buffer_size+4);
 
-    // this->http.end();
+    this->http.end();
     return true;
 }
 

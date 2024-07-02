@@ -6,7 +6,7 @@
 #include "freertos/FreeRTOS.h"
 #include "Logger_Manager.h" 
 
-#define Buffer_size 10000U
+#define Buffer_size 35000U
 
 class Collector_Manager
 {
